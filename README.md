@@ -1,5 +1,5 @@
 ## GSOC Application Project
-
+![Cover Image](./cover.png)
 
 ## Available Scripts
 
