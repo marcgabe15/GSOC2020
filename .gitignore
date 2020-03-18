@@ -10,6 +10,11 @@
 
 # production
 /build
+data.json
+data2.json
+data3.json
+data4.json
+constants.js
 
 # misc
 .DS_Store
