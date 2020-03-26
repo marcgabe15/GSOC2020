@@ -1,12 +1,8 @@
 import React from 'react';
 import DeckGL from '@deck.gl/react';
 import {PathLayer} from '@deck.gl/layers';
-import {LineLayer} from '@deck.gl/layers';
 import {StaticMap} from 'react-map-gl';
-import trackdata from './data.json'
-import trackdata2 from './data2.json'
-import trackdata3 from './data3.json'
-import trackdata4 from './data4.json'
+import axios from 'axios'
 const access = require('./constants')
 
 // Set your mapbox access token here
@@ -20,66 +16,45 @@ const initialViewState = {
   bearing: 0
 };
 
-const data_1 = [{
-  name: "path-layer",
-  color: [101, 147, 245],
-  path: trackdata.features.map((val => val.geometry.coordinates))
-}
-]
-const data_2 = [{
-  name: "path-layer1",
-  color: [255,0,0],
-  path: trackdata2.features.map((val => val.geometry.coordinates))
-}]
-const data_3 = [{
-  name: "path-layer2",
-  color: [0,255,0],
-  path: trackdata3.features.map((val => val.geometry.coordinates))
-}]
-const data4 = [{
-  name: "path-layer3",
-  color: [0,255,0],
-  path: trackdata4.features.map((val => val.geometry.coordinates))
-
-}]
 class App extends React.Component {
   state = {
-    path: []
+    paths: []
+  }
+  componentDidMount(){
+    axios.get('https://envirocar.org/api/stable/tracks?limit=1000')
+      .then(res => {
+        res.data.tracks.forEach(element => {
+          var uri = 'https://envirocar.org/api/stable/tracks/' + element.id
+          axios.get(uri)
+            .then(result => {
+              var path = [{
+                name: element.id,
+                color: [0,255,0],
+                path: result.data.features.map((val => val.geometry.coordinates))
+              }]
+              this.setState(prevstate => ({
+                paths: [...prevstate.paths, path]
+              }))
+            })
+        });
+      })
+      
   }
 
   _renderLayers() {
-    return [
-      new PathLayer({
-        id:'path-layer',
-        data: data_1,
-        getWidth: data => 10,
-        getColor: data => data.color,
-        widthMinPixels: 7
-      }),
-      new PathLayer({
-        id:'path-layer2',
-        data: data_2,
-        getWidth: data => 10,
-        getColor: data => data.color,
-        widthMinPixels: 7
-      }),
-      new PathLayer({
-        id:'path-layer3',
-        data: data_3,
-        getWidth: data => 10,
-        getColor: data => data.color,
-        widthMinPixels: 7
-      }),
-      new PathLayer({
-        id:'path-layer3',
-        data: data4,
-        getWidth: data => 10,
-        getColor: data => data.color,
-        widthMinPixels: 7
-      }),
-    ]
-  }
-  componentDidMount(){
+    var pathlayers = []
+    this.state.paths.forEach(element => {
+      pathlayers.push(
+        new PathLayer({
+          id: element.name,
+          data: element,
+          getWidth: data => 10,
+          getColor: data => data.color,
+          widthMinPixels: 7
+        })
+      )
+    })
+    return pathlayers
   }
   render() {
     return (
@@ -89,7 +64,7 @@ class App extends React.Component {
         layers={this._renderLayers()}
       >
         <StaticMap 
-        // mapStyle={`mapbox://styles/mapbox/streets-v11`}
+        mapStyle={`mapbox://styles/mapbox/streets-v11`}
         mapboxApiAccessToken={MAPBOX_ACCESS_TOKEN} />
       </DeckGL>
     );
